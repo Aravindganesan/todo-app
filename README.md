@@ -94,5 +94,22 @@ python3 app.py
 
 The application is available locally at:
 ```text
-http://127.0.0.1:5001
+http://127.0.0.1:5000
 ```
+
+### Docker
+
+Build the images and start the app with Postgres using Docker Compose:
+```bash
+# build and start (detached)
+docker compose build
+docker compose up -d
+
+# view logs
+docker compose logs -f web
+
+# stop and remove
+docker compose down
+```
+
+By default the compose stack creates a Postgres database using the credentials configured in `docker-compose.yml`. The web service is available at `http://127.0.0.1:5000` once the services start.
