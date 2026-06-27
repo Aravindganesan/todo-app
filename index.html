@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activity Tracker</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7ff 0%, #eef4ff 100%);
+        margin: 0;
+        padding: 24px;
+        color: #1e293b;
+      }
+
+      .app {
+        max-width: 1280px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+      }
+
+      h1 {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 2rem;
+        color: #312e81;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      input, button {
+        padding: 11px 12px;
+        border-radius: 10px;
+        border: 1px solid #dbe3f0;
+        font-size: 0.95rem;
+      }
+
+      input {
+        background: #f8fbff;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      button {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        cursor: pointer;
+        border: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.18);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.24);
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(240px, 1fr));
+        gap: 18px;
+      }
+
+      .column {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-radius: 16px;
+        padding: 14px;
+        min-height: 300px;
+        border: 1px solid #e2e8f0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      }
+
+      .column h3 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 1.05rem;
+      }
+
+      .dropzone {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 240px;
+      }
+
+      .todo-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        cursor: grab;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+      }
+
+      .todo-card .title {
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #111827;
+      }
+
+      .meta {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 5px;
+        line-height: 1.4;
+      }
+
+      .empty {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        text-align: center;
+        padding-top: 34px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        min-height: 70px;
+      }
+
+      .card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .action-btn {
+        background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        box-shadow: none;
+      }
+
+      .delete-btn {
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        box-shadow: none;
+      }
+
+      .history-panel {
+        display: none;
+        margin-top: 10px;
+        padding: 8px 10px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        border-radius: 8px;
+        font-size: 0.8rem;
+        color: #475569;
+      }
+
+      .history-panel.open {
+        display: block;
+      }
+
+      .history-panel ul {
+        padding-left: 16px;
+        margin: 6px 0 0;
+      }
+
+      .history-btn {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        box-shadow: none;
+      }
+
+      .history-feed h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+
+      .history-feed ul {
+        padding-left: 18px;
+        margin: 0;
+      }
+
+      .history-feed li {
+        margin-bottom: 8px;
+        color: #475569;
+      }
+
+      .history-record {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        background: #f8fafc;
+      }
+
+      .history-record summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .history-record .details {
+        margin-top: 8px;
+        font-size: 0.9rem;
+        color: #475569;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #e0e7ff;
+        color: #4338ca;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <h1>Activity Tracker</h1>
+      <div class="controls">
+        <input id="usernameInput" type="text" placeholder="Your username" value="anonymous" />
+        <input id="todoInput" type="text" placeholder="Add a new task" />
+        <button id="addBtn">Add Todo</button>
+      </div>
+
+      <div class="board">
+        <div class="column" data-step="backlog">
+          <h3>Backlog</h3>
+          <div class="dropzone" id="backlog"></div>
+        </div>
+        <div class="column" data-step="in_progress">
+          <h3>In Progress</h3>
+          <div class="dropzone" id="in_progress"></div>
+        </div>
+        <div class="column" data-step="completed">
+          <h3>Completed</h3>
+          <div class="dropzone" id="completed"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const input = document.getElementById('todoInput');
+      const usernameInput = document.getElementById('usernameInput');
+      const addBtn = document.getElementById('addBtn');
+      const columns = document.querySelectorAll('.column');
+      let draggedTodoId = null;
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\"/g, '&quot;');
+      }
+
+      function renderTodos(todos) {
+        columns.forEach(column => {
+          const step = column.dataset.step;
+          const container = document.getElementById(step);
+          const filtered = todos.filter(todo => todo.workflow_step === step);
+          container.innerHTML = '';
+
+          if (!filtered.length) {
+            container.innerHTML = '<div class="empty">Drop tasks here</div>';
+            return;
+          }
+
+          filtered.forEach(todo => {
+            const card = document.createElement('div');
+            card.className = 'todo-card';
+            card.draggable = true;
+            card.dataset.id = todo.id;
+            card.innerHTML = `
+              <div class="title">${escapeHtml(todo.title)}</div>
+              <div class="meta">by ${escapeHtml(todo.username)}</div>
+              <div class="meta">updated ${new Date(todo.last_moved_at || todo.updated_at).toLocaleString()}</div>
+              <div class="card-actions">
+                <button class="action-btn" data-action="backlog" data-id="${todo.id}">Backlog</button>
+                <button class="action-btn" data-action="in_progress" data-id="${todo.id}">In Progress</button>
+                <button class="action-btn" data-action="completed" data-id="${todo.id}">Completed</button>
+                <button class="history-btn" data-id="${todo.id}">View History</button>
+                <button class="delete-btn" data-id="${todo.id}">Delete</button>
+              </div>
+              <div class="history-panel" data-history-for="${todo.id}"></div>
+            `;
+
+            card.addEventListener('dragstart', event => {
+              draggedTodoId = todo.id;
+              event.dataTransfer.setData('text/plain', String(todo.id));
+            });
+
+            card.querySelectorAll('.action-btn').forEach(button => {
+              button.addEventListener('click', () => moveTodo(todo.id, button.dataset.action));
+            });
+            card.querySelector('.history-btn').addEventListener('click', async () => {
+              const panel = card.querySelector(`[data-history-for="${todo.id}"]`);
+              if (!panel) return;
+
+              const isOpen = panel.classList.toggle('open');
+              if (!isOpen) return;
+
+              if (panel.dataset.loaded === 'true') return;
+              panel.innerHTML = '<div>Loading history…</div>';
+              await loadHistory(todo.id);
+              panel.dataset.loaded = 'true';
+            });
+            card.querySelector('.delete-btn').addEventListener('click', () => deleteTodo(todo.id));
+            container.appendChild(card);
+          });
+        });
+      }
+
+      async function loadTodos() {
+        const response = await fetch('/api/todos');
+        const todos = await response.json();
+        renderTodos(todos);
+      }
+
+      async function addTodo() {
+        const title = input.value.trim();
+        const username = usernameInput.value.trim() || 'anonymous';
+        if (!title) return;
+
+        await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, username, workflow_step: 'backlog' })
+        });
+        input.value = '';
+        await loadTodos();
+      }
+
+      async function deleteTodo(id) {
+        await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+        await loadTodos();
+      }
+
+      async function loadHistory(todoId) {
+        const panel = document.querySelector(`[data-history-for="${todoId}"]`);
+        if (!panel) return;
+        try {
+          const response = await fetch(`/api/todos/${todoId}/history`);
+          if (!response.ok) throw new Error('Unable to load task history');
+          const history = await response.json();
+          if (!history.length) {
+            panel.innerHTML = '<div>No history yet.</div>';
+            return;
+          }
+          panel.innerHTML = `
+            <div><strong>History</strong></div>
+            <ul>
+              ${history.map(item => `
+                <li class="history-record">
+                  <details>
+                    <summary>${escapeHtml(item.current_step)} • ${escapeHtml(item.changed_by)}</summary>
+                    <div class="details">
+                      <div><span class="pill">From</span>${escapeHtml(item.previous_step || 'created')} → <span class="pill">To</span>${escapeHtml(item.current_step)}</div>
+                      <div>Changed at: ${new Date(item.changed_at).toLocaleString()}</div>
+                      <div>Created: ${new Date(item.created_at).toLocaleString()}</div>
+                      <div>Updated: ${new Date(item.updated_at).toLocaleString()}</div>
+                    </div>
+                  </details>
+                </li>
+              `).join('')}
+            </ul>
+          `;
+        } catch (error) {
+          panel.innerHTML = '<div>Unable to load task history.</div>';
+        }
+      }
+
+      async function moveTodo(todoId, targetStep) {
+        if (!todoId) return;
+        const username = usernameInput.value.trim() || 'anonymous';
+        await fetch(`/api/todos/${todoId}/move`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workflow_step: targetStep, username })
+        });
+        await loadTodos();
+      }
+
+      columns.forEach(column => {
+        const step = column.dataset.step;
+        const dropzone = document.getElementById(step);
+
+        dropzone.addEventListener('dragover', event => event.preventDefault());
+        dropzone.addEventListener('drop', () => {
+          if (draggedTodoId) {
+            moveTodo(draggedTodoId, step);
+            draggedTodoId = null;
+          }
+        });
+      });
+
+      addBtn.addEventListener('click', addTodo);
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          addTodo();
+        }
+      });
+
+      loadTodos();
+      loadHistoryFeed();
+    </script>
+  </body>
+</html>

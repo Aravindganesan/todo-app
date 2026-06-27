@@ -62,11 +62,13 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     todo_id INTEGER NOT NULL REFERENCES todos(id) ON DELETE CASCADE,
                     workflow_step_id INTEGER NOT NULL REFERENCES workflow_steps(id),
+                    previous_step_id INTEGER REFERENCES workflow_steps(id),
                     changed_at TIMESTAMPTZ DEFAULT NOW(),
                     changed_by TEXT NOT NULL
                 )
                 """
             )
+            cur.execute("ALTER TABLE todo_history ADD COLUMN IF NOT EXISTS previous_step_id INTEGER")
 
 
 init_db()
@@ -108,15 +110,47 @@ def todo_history(todo_id):
             cur.execute(
                 """
                 SELECT
+                    th.id,
                     th.changed_at,
                     th.changed_by,
-                    ws.name AS workflow_step
+                    ws.name AS current_step,
+                    prev_ws.name AS previous_step,
+                    t.created_at AS created_at,
+                    t.updated_at AS updated_at
                 FROM todo_history th
                 JOIN workflow_steps ws ON ws.id = th.workflow_step_id
+                LEFT JOIN workflow_steps prev_ws ON prev_ws.id = th.previous_step_id
+                JOIN todos t ON t.id = th.todo_id
                 WHERE th.todo_id = %s
-                ORDER BY th.changed_at ASC
+                ORDER BY th.changed_at DESC
                 """,
                 (todo_id,),
+            )
+            rows = cur.fetchall()
+            return jsonify([dict(row) for row in rows])
+
+
+@app.get("/api/history")
+def all_history():
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    th.changed_at,
+                    th.changed_by,
+                    ws.name AS workflow_step,
+                    prev_ws.name AS previous_step,
+                    t.id AS todo_id,
+                    t.title AS todo_title,
+                    t.created_at AS created_at,
+                    t.updated_at AS updated_at
+                FROM todo_history th
+                JOIN workflow_steps ws ON ws.id = th.workflow_step_id
+                LEFT JOIN workflow_steps prev_ws ON prev_ws.id = th.previous_step_id
+                JOIN todos t ON t.id = th.todo_id
+                ORDER BY th.changed_at DESC
+                """
             )
             rows = cur.fetchall()
             return jsonify([dict(row) for row in rows])
@@ -151,8 +185,8 @@ def create_todo():
             )
             row = cur.fetchone()
             cur.execute(
-                "INSERT INTO todo_history (todo_id, workflow_step_id, changed_by) VALUES (%s, %s, %s)",
-                (row["id"], step_id, username),
+                "INSERT INTO todo_history (todo_id, workflow_step_id, previous_step_id, changed_by) VALUES (%s, %s, %s, %s)",
+                (row["id"], step_id, None, username),
             )
             cur.execute(
                 """
@@ -183,6 +217,10 @@ def move_todo(todo_id):
 
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT workflow_step_id FROM todos WHERE id = %s", (todo_id,))
+            current_row = cur.fetchone()
+            previous_step_id = current_row["workflow_step_id"] if current_row else None
+
             cur.execute("SELECT id FROM workflow_steps WHERE name = %s", (workflow_step_name,))
             step_row = cur.fetchone()
             if not step_row:
@@ -204,8 +242,8 @@ def move_todo(todo_id):
                 return jsonify({"error": "Todo not found"}), 404
 
             cur.execute(
-                "INSERT INTO todo_history (todo_id, workflow_step_id, changed_by) VALUES (%s, %s, %s)",
-                (todo_id, step_id, changed_by),
+                "INSERT INTO todo_history (todo_id, workflow_step_id, previous_step_id, changed_by) VALUES (%s, %s, %s, %s)",
+                (todo_id, step_id, previous_step_id, changed_by),
             )
 
             cur.execute(
